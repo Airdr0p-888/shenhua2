@@ -698,6 +698,18 @@ async function adminRefreshStatus(){
     var contractTokenNum = parseFloat(ethers.utils.formatEther(contractTokenBal));
     var contractBnbNum = parseFloat(ethers.utils.formatEther(contractBnbBal));
 
+    // 同步开盘设置到 UI
+    document.getElementById('admin-auto-open').checked = autoOpen;
+    var openStatusEl = document.getElementById('admin-auto-open-status');
+    if (openStatusEl) {
+      if (openTime > 0n) {
+        var dt = new Date(Number(openTime) * 1000);
+        openStatusEl.textContent = autoOpen ? '（自动开 + 定时 ' + dt.toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}) + '）' : '（定时 ' + dt.toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}) + ' 开盘）';
+      } else {
+        openStatusEl.textContent = autoOpen ? '（已开启）' : '（已关闭，需手动/定时开）';
+      }
+    }
+
     document.getElementById('admin-status-box').innerHTML =
       '<div style="margin-bottom:8px">' +
         '<span style="color:var(--text-muted);font-size:.78rem">法契天道状态</span><br/>' +
