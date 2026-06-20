@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>神龙 MINT — 仙品铸造</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..900&family=Noto+Sans+SC:wght@400;500;600;700;800;900&family=Ma+Shan+Zheng&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-deep:    #0a0a14;
+      --bg-card:    #12122a;
+      --bg-input:   #1a1a35;
+      --accent1:    #c9a96e;  /* 金 */
+      --accent2:    #c41e3a;  /* 赤 */
+      --accent3:    #9b59b6;  /* 紫 */
+      --danger:     #ff4444;
+      --success:    #4caf50;
+      --text-main:  #e8dcc8;
+      --text-muted: #8a8578;
+      --border:     #2a2545;
+      --border-focus: rgba(201,169,110,.55);
+      --radius: 12px;
+      --font: 'Inter','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;
+      --font-myth: 'Ma Shan Zheng', 'Noto Sans SC', cursive;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg-deep);
+      color: var(--text-main);
+      font-family: var(--font);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    body::before {
+      content:'';
+      position:fixed; inset:0;
+      background:
+        radial-gradient(ellipse 70% 45% at 15% 15%, rgba(201,169,110,.06) 0%, transparent 60%),
+        radial-gradient(ellipse 55% 40% at 85% 85%, rgba(196,30,58,.05) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 30% at 50% 0%, rgba(155,89,182,.04) 0%, transparent 50%);
+      pointer-events:none; z-index:0;
+    }
+
+    /* 祥云粒子 */
+    .stars { position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
+    .star {
+      position:absolute; border-radius:50%;
+      background:rgba(201,169,110,.15);
+      opacity:0; animation:twinkle var(--dur,4s) var(--delay,0s) infinite ease-in-out;
+      box-shadow: 0 0 6px rgba(201,169,110,.3);
+    }
+    @keyframes twinkle {
+      0%,100%{opacity:0;transform:scale(.4) translateY(4px)} 
+      50%{opacity:var(--op,.6);transform:scale(1) translateY(-4px)}
+    }
+
+    /* 导航 */
+    header {
+      position:sticky; top:0; z-index:100;
+      background:rgba(10,10,20,.92); backdrop-filter:blur(20px);
+      border-bottom:1px solid var(--border);
+    }
+    nav {
+      max-width:1100px; margin:0 auto; padding:0 24px;
+      display:flex; align-items:center; justify-content:space-between; height:66px;
+    }
+    .logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .logo-icon-img { width:32px; height:32px; border-radius:50%; animation:float 4s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    .logo-text-en { 
+      font-size:.72rem; letter-spacing:4px; color:var(--accent1); display:block; line-height:1;
+      text-shadow: 0 0 10px rgba(201,169,110,.4);
+    }
+    .logo-text-cn { font-size:1.05rem; color:var(--accent1); font-weight:800; display:block; line-height:1.3; }
+    .nav-right { display:flex; align-items:center; gap:12px; }
+    .btn {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:9px 20px; border-radius:50px; font-weight:700; font-size:.9rem;
+      cursor:pointer; text-decoration:none; border:none; transition:all .25s;
+    }
+    .btn-outline-purple {
+      background:rgba(201,169,110,.1); color:var(--accent1);
+      border:1px solid rgba(201,169,110,.35);
+    }
+    .btn-outline-purple:hover { background:rgba(201,169,110,.2); box-shadow: 0 0 16px rgba(201,169,110,.2); }
+    .btn-ghost { background:transparent; color:var(--text-muted); border:1px solid var(--border); }
+    .btn-ghost:hover { border-color:var(--accent1); color:var(--accent1); }
+    .wallet-addr {
+      font-size:.82rem; color:var(--accent1); font-family:monospace;
+      background:rgba(201,169,110,.08); border:1px solid rgba(201,169,110,.25);
+      padding:5px 14px; border-radius:50px;
+    }
+
+    /* 主容器 */
+    .main-wrap {
+      max-width:560px; margin:0 auto; padding:48px 24px 80px;
+      position:relative; z-index:1;
+    }
+
+    /* 页头 */
+    .page-hero { text-align:center; margin-bottom:36px; }
+    .page-hero h1 { font-size:clamp(1.6rem,4vw,2.6rem); font-weight:900; margin-bottom:10px; }
+    .gradient-text {
+      background:linear-gradient(135deg,var(--accent1),#e8b84b,#c41e3a);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .page-hero p { color:var(--text-muted); font-size:.95rem; }
+
+    /* Mint 卡片 */
+    .mint-card {
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius:18px; padding:32px 28px; margin-bottom:20px;
+      box-shadow: 0 4px 30px rgba(0,0,0,.3), inset 0 1px 0 rgba(201,169,110,.05);
+    }
+
+    /* 状态指示 */
+    .status-grid {
+      display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:28px;
+    }
+    .status-item {
+      background:var(--bg-input); border:1px solid var(--border);
+      border-radius:10px; padding:14px 16px; text-align:center;
+    }
+    .status-label { font-size:.78rem; color:var(--text-muted); margin-bottom:4px; }
+    .status-value { font-size:1.1rem; font-weight:800; color:var(--accent1); }
+    .status-value.danger { color:var(--danger); }
+    .status-value.success { color:var(--success); }
+
+    /* 进度条 */
+    .progress-wrap { margin-bottom:28px; }
+    .progress-header { display:flex; justify-content:space-between; margin-bottom:6px; }
+    .progress-header span { font-size:.82rem; color:var(--text-muted); }
+    .progress-header .progress-pct { font-weight:800; color:var(--accent1); }
+    .progress-bar-bg {
+      height:10px; background:rgba(255,255,255,.04); border-radius:50px; overflow:hidden;
+    }
+    .progress-bar-fill {
+      height:100%; border-radius:50px; transition:width .4s ease;
+      background:linear-gradient(90deg,var(--accent1),#e8b84b,#c41e3a);
+      box-shadow: 0 0 12px rgba(201,169,110,.3);
+    }
+
+    /* Mint 信息 */
+    .mint-info {
+      background:rgba(201,169,110,.04); border:1px solid rgba(201,169,110,.12);
+      border-radius:10px; padding:16px; margin-bottom:24px;
+    }
+    .mint-info-row {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:6px 0;
+    }
+    .mint-info-row + .mint-info-row { border-top:1px solid rgba(201,169,110,.06); }
+    .mint-info-label { font-size:.85rem; color:var(--text-muted); }
+    .mint-info-value { font-size:.9rem; font-weight:700; color:var(--text-main); }
+
+    /* 限制提示 */
+    .limit-notice {
+      display:flex; align-items:center; gap:10px;
+      background:rgba(196,30,58,.06); border:1px solid rgba(196,30,58,.2);
+      border-radius:10px; padding:12px 16px; margin-bottom:24px;
+      font-size:.85rem; color:var(--accent2);
+    }
+    .limit-notice-icon { font-size:1.2rem; flex-shrink:0; }
+
+    /* 已 Mint 状态 */
+    .already-minted {
+      display:none; flex-direction:column; align-items:center; gap:14px;
+      padding:28px 16px; text-align:center;
+    }
+    .already-minted.show { display:flex; }
+    .already-minted-icon { font-size:3rem; }
+    .already-minted h3 { font-size:1.15rem; font-weight:800; color:var(--success); }
+    .already-minted p { font-size:.9rem; color:var(--text-muted); }
+
+    /* 预售结束 */
+    .presale-ended {
+      display:none; flex-direction:column; align-items:center; gap:14px;
+      padding:28px 16px; text-align:center;
+    }
+    .presale-ended.show { display:flex; }
+    .presale-ended-icon { font-size:3rem; }
+    .presale-ended h3 { font-size:1.15rem; font-weight:800; color:var(--danger); }
+    .presale-ended p { font-size:.9rem; color:var(--text-muted); }
+
+    /* Mint 按钮 */
+    .mint-btn-wrap { text-align:center; }
+    .btn-mint {
+      width:100%; padding:16px 36px;
+      font-size:1.2rem; border-radius:50px;
+      background:linear-gradient(135deg,var(--accent1),#e8b84b,var(--accent2));
+      color:#0a0a14; font-weight:900; cursor:pointer; border:none;
+      transition:all .3s; box-shadow:0 4px 24px rgba(201,169,110,.2);
+      display:inline-flex; align-items:center; justify-content:center; gap:10px;
+      text-shadow: none;
+    }
+    .btn-mint:hover:not(:disabled) {
+      transform:translateY(-3px); box-shadow:0 8px 36px rgba(201,169,110,.35);
+    }
+    .btn-mint:disabled { opacity:.4; cursor:not-allowed; transform:none; filter: grayscale(30%); }
+    .mint-hint { font-size:.8rem; color:var(--text-muted); margin-top:10px; }
+
+    /* 弹窗 */
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,.85); backdrop-filter:blur(8px);
+      z-index:999; display:none; align-items:center; justify-content:center; padding:20px;
+    }
+    .modal-overlay.show { display:flex; }
+    .modal {
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius:20px; padding:28px 24px; max-width:460px; width:100%;
+      text-align:center; position:relative; animation:modal-in .25s ease;
+      box-shadow: 0 0 60px rgba(201,169,110,.1);
+    }
+    @keyframes modal-in { from{opacity:0;transform:scale(.9) translateY(20px)} to{opacity:1;transform:scale(1)} }
+    .modal-icon { font-size:3.5rem; margin-bottom:16px; }
+    .modal h3 { font-size:1.3rem; font-weight:900; margin-bottom:10px; color:var(--accent1); }
+    .modal p  { font-size:.92rem; color:var(--text-muted); margin-bottom:20px; }
+    .modal-status {
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      font-size:.88rem; color:var(--text-muted); margin-bottom:24px;
+    }
+    .spinner {
+      width:16px; height:16px; border:2px solid rgba(255,255,255,.08);
+      border-top-color:var(--accent1); border-radius:50%;
+      animation:spin .7s linear infinite;
+    }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .modal-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+    .btn-close-modal {
+      background:rgba(255,255,255,.03); border:1px solid var(--border);
+      color:var(--text-muted); padding:9px 22px; border-radius:50px; cursor:pointer;
+      font-size:.88rem; transition:all .2s;
+    }
+    .btn-close-modal:hover { color:var(--text-main); border-color:var(--accent1); }
+    .btn-bscscan {
+      background:rgba(201,169,110,.08); border:1px solid rgba(201,169,110,.25);
+      color:var(--accent1); padding:9px 20px; border-radius:50px; cursor:pointer;
+      font-size:.88rem; font-weight:700; text-decoration:none; transition:all .2s;
+    }
+    .btn-bscscan:hover { background:rgba(201,169,110,.15); box-shadow: 0 0 12px rgba(201,169,110,.15); }
+
+    /* 合约地址输入 */
+    .contract-input-section {
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius:18px; padding:24px 28px; margin-bottom:20px;
+      box-shadow: 0 2px 20px rgba(0,0,0,.2);
+    }
+    .contract-input-section label {
+      font-size:.9rem; font-weight:700; display:block; margin-bottom:8px;
+      color: var(--accent1);
+    }
+    .contract-input-row { display:flex; gap:10px; }
+    .contract-input-row input {
+      flex:1; background:var(--bg-input); border:1px solid var(--border);
+      border-radius:9px; padding:11px 14px; color:var(--text-main);
+      font-size:.88rem; font-family:monospace; outline:none;
+      transition:border-color .2s;
+    }
+    .contract-input-row input::placeholder { color: #4a4560; }
+    .contract-input-row input:focus { border-color:var(--border-focus); box-shadow: 0 0 12px rgba(201,169,110,.1); }
+    .btn-load {
+      padding:11px 22px; border-radius:9px; border:none;
+      background:linear-gradient(135deg,var(--accent1),#e8b84b);
+      color:#0a0a14; font-weight:800; cursor:pointer; transition:all .2s;
+      white-space:nowrap;
+    }
+    .btn-load:hover { transform:translateY(-1px); box-shadow:0 4px 20px rgba(201,169,110,.3); }
+    .contract-input-hint { font-size:.78rem; color:var(--text-muted); margin-top:8px; }
+
+    /* 响应式 */
+    @media(max-width:640px) {
+      .status-grid { grid-template-columns:1fr; }
+      .mint-card { padding:24px 18px; }
+      .contract-input-section { padding:20px 16px; }
+      .contract-input-row { flex-direction:column; }
+      nav { gap:8px; flex-wrap:wrap; height:auto; padding:10px 0; }
+    }
+  </style>
+  <script src="ethers.umd.min.js"></script>
+  <script src="contract_data.js?v=20260617"></script>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<!-- 导航 -->
+<header>
+  <nav>
+    <a class="logo" href="index.html">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="logo-icon-img" style="flex-shrink:0;animation:float 4s ease-in-out infinite">
+        <!-- 龙纹圆底 -->
+        <circle cx="50" cy="50" r="46" fill="#1a1a35" stroke="#c9a96e" stroke-width="2.5"/>
+        <circle cx="50" cy="50" r="38" fill="#12122a" stroke="#c9a96e" stroke-width="1" stroke-dasharray="4 4"/>
+        <!-- 龙首 -->
+        <ellipse cx="50" cy="42" rx="15" ry="12" fill="#c9a96e"/>
+        <ellipse cx="50" cy="44" rx="12" ry="8" fill="#1a1a35"/>
+        <!-- 龙角 -->
+        <path d="M38 30 Q30 16 42 22" stroke="#c9a96e" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M62 30 Q70 16 58 22" stroke="#c9a96e" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <!-- 龙眼 -->
+        <ellipse cx="44" cy="42" rx="4" ry="3.5" fill="#c41e3a"/>
+        <ellipse cx="56" cy="42" rx="4" ry="3.5" fill="#c41e3a"/>
+        <circle cx="44" cy="42" r="1.5" fill="#ffd700"/>
+        <circle cx="56" cy="42" r="1.5" fill="#ffd700"/>
+        <!-- 龙须 -->
+        <path d="M34 44 Q22 46 18 56" stroke="#c9a96e" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M66 44 Q78 46 82 56" stroke="#c9a96e" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <!-- 龙鳞 -->
+        <path d="M38 54 Q50 62 62 54" stroke="#c9a96e" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M40 58 Q50 66 60 58" stroke="#c9a96e" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <!-- 云纹 -->
+        <path d="M18 65 Q26 60 30 65 Q34 60 42 65" stroke="#c9a96e" stroke-width="1.5" fill="none" opacity=".5"/>
+        <path d="M82 65 Q74 60 70 65 Q66 60 58 65" stroke="#c9a96e" stroke-width="1.5" fill="none" opacity=".5"/>
+      </svg>
+      <span>
+        <span class="logo-text-en">DRAGON MINT</span>
+        <span class="logo-text-cn">神龙发射台</span>
+      </span>
+    </a>
+    <div class="nav-right">
+      <span id="wallet-addr-display" class="wallet-addr" style="display:none"></span>
+      <button class="btn btn-outline-purple" id="btn-connect" onclick="connectWallet()">连接仙窍 📡</button>
+      <a class="btn btn-ghost" href="index.html">返回天宫</a>
+    </div>
+  </nav>
+</header>
+
+<div class="main-wrap">
+  <!-- 页头 -->
+  <div class="page-hero">
+    <h1>🐉 <span class="gradient-text">仙品铸造</span></h1>
+    <p>每座洞府限铸一次仙品，天材地宝先到先得，募满即止</p>
+  </div>
+
+  <!-- 合约地址输入 -->
+  <div class="contract-input-section">
+    <label>仙品法契地址</label>
+    <div class="contract-input-row">
+      <input type="text" id="contract-address" placeholder="0x... 粘贴已炼制的仙品法契地址" />
+      <button class="btn-load" onclick="loadContract()">感应法契</button>
+    </div>
+    <div class="contract-input-hint">输入已部署的神龙仙品法契地址，感应后即可铸造</div>
+  </div>
+
+  <!-- Mint 主卡片（加载合约后显示） -->
+  <div id="mint-section" style="display:none">
+    <div class="mint-card">
+      <!-- 状态 -->
+      <div class="status-grid">
+        <div class="status-item">
+          <div class="status-label">仙品铸造状态</div>
+          <div class="status-value" id="status-presale">感应中...</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">你的铸造状态</div>
+          <div class="status-value" id="status-minted">感应中...</div>
+        </div>
+      </div>
+
+      <!-- 进度 -->
+      <div class="progress-wrap">
+        <div class="progress-header">
+          <span>天材地宝募集进度</span>
+          <span class="progress-pct" id="progress-pct">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Mint 信息 -->
+      <div class="mint-info">
+        <div class="mint-info-row">
+          <span class="mint-info-label">仙品名号</span>
+          <span class="mint-info-value" id="info-name">—</span>
+        </div>
+        <div class="mint-info-row">
+          <span class="mint-info-label">仙品印记</span>
+          <span class="mint-info-value" id="info-symbol">—</span>
+        </div>
+        <div class="mint-info-row">
+          <span class="mint-info-label">单次铸造灵材</span>
+          <span class="mint-info-value" id="info-cost">—</span>
+        </div>
+        <div class="mint-info-row">
+          <span class="mint-info-label">单次获得仙品</span>
+          <span class="mint-info-value" id="info-tokens">—</span>
+        </div>
+        <div class="mint-info-row">
+          <span class="mint-info-label">目标募集灵材</span>
+          <span class="mint-info-value" id="info-fill">—</span>
+        </div>
+        <div class="mint-info-row">
+          <span class="mint-info-label">已募集灵材</span>
+          <span class="mint-info-value" id="info-collected">—</span>
+        </div>
+      </div>
+
+      <!-- 限制提示 -->
+      <div class="limit-notice">
+        <span class="limit-notice-icon">🔮</span>
+        <span>每座洞府（钱包地址）限铸造一次，重复洞府将被天道法则拦截</span>
+      </div>
+
+      <!-- 已 Mint 状态 -->
+      <div class="already-minted" id="already-minted">
+        <div class="already-minted-icon">✨</div>
+        <h3>你已铸造过仙品</h3>
+        <p id="already-minted-detail">—</p>
+      </div>
+
+      <!-- 预售结束 -->
+      <div class="presale-ended" id="presale-ended">
+        <div class="presale-ended-icon">🌋</div>
+        <h3>铸造已终止</h3>
+        <p>天材地宝已募满，铸造法阵已关闭，请前往仙市交易</p>
+      </div>
+
+      <!-- Mint 按钮 -->
+      <div class="mint-btn-wrap" id="mint-btn-wrap">
+        <button class="btn-mint" id="btn-mint" onclick="doMint()" disabled>
+          🐉 铸造仙品
+        </button>
+        <div class="mint-hint" id="mint-hint">请先连接仙窍并感应法契</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 弹窗 -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-icon" id="modal-icon">🐉</div>
+    <h3 id="modal-title">铸造中...</h3>
+    <p id="modal-desc">请等待天道确认</p>
+    <div class="modal-status" id="modal-status" style="display:none">
+      <div class="spinner"></div>
+      <span id="modal-status-text">等待天机确认...</span>
+    </div>
+    <div class="modal-actions" id="modal-actions" style="display:none">
+      <a class="btn-bscscan" id="modal-bscscan" href="#" target="_blank">查看天书</a>
+      <button class="btn-close-modal" onclick="closeModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== 全局状态 =====
+let provider, signer, userAddress;
+let tokenContract = null;
+const BSC_CHAIN_ID = 56;
+const BSC_CHAIN_ID_HEX = '0x38';
+
+// ===== 星空（祥云金尘） =====
+(function(){
+  const c = document.getElementById('stars');
+  for(let i=0;i<50;i++){
+    const s = document.createElement('div');
+    s.className='star';
+    const size = 1.5 + Math.random() * 3;
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${size}px;height:${size}px;--dur:${2+Math.random()*5}s;--delay:${Math.random()*4}s;--op:${.3+Math.random()*.5}`;
+    c.appendChild(s);
+  }
+})();
+
+// ===== 连接钱包 =====
+async function connectWallet(){
+  if(!window.ethers) return alert('请先安装 MetaMask');
+  try{
+    const accounts = await window.ethereum.request({method:'eth_requestAccounts'});
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    signer = provider.getSigner();
+    userAddress = accounts[0];
+    document.getElementById('btn-connect').textContent='仙窍已通 ✓';
+    document.getElementById('btn-connect').disabled=true;
+    const d = document.getElementById('wallet-addr-display');
+    d.textContent = userAddress.slice(0,6)+'...'+userAddress.slice(-4);
+    d.style.display='inline-block';
+
+    // 检查 BSC 网络
+    const net = await provider.getNetwork();
+    if(net.chainId !== BSC_CHAIN_ID){
+      try{
+        await window.ethereum.request({
+          method:'wallet_switchEthereumChain',
+          params:[{chainId:BSC_CHAIN_ID_HEX}]
+        });
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = provider.getSigner();
+      }catch(e){
+        alert('请切换到 BSC 主网');
+        return;
+      }
+    }
+
+    // 如果已加载合约，刷新状态
+    if(tokenContract) await refreshStatus();
+  }catch(e){
+    console.error(e);
+    alert('连接仙窍失败: '+e.message);
+  }
+}
+
+// ===== 加载合约 =====
+async function loadContract(){
+  const addr = document.getElementById('contract-address').value.trim();
+  if(!addr || !ethers.utils.isAddress(addr)){
+    alert('请输入有效的法契地址');
+    return;
+  }
+  if(!window.ethereum){
+    alert('请先安装 MetaMask');
+    return;
+  }
+
+  try{
+    if(!provider) await connectWallet();
+
+    tokenContract = new ethers.Contract(addr, CONTRACT_DATA.ABI, signer);
+    document.getElementById('mint-section').style.display='block';
+    await refreshStatus();
+  }catch(e){
+    console.error(e);
+    alert('感应法契失败: '+e.message);
+  }
+}
+
+// ===== 刷新状态 =====
+async function refreshStatus(){
+  if(!tokenContract || !userAddress) return;
+
+  try{
+    const [presaleActive, mintedAmt, mintCost, fillAmt, collected, name_, symbol_, tokensPerMint, totalSupply_] = await Promise.all([
+      tokenContract.presaleActive(),
+      tokenContract.mintedAmount(userAddress),
+      tokenContract.mintCostBNB(),
+      tokenContract.fillAmountBNB(),
+      tokenContract.totalBNBCollected(),
+      tokenContract.name(),
+      tokenContract.symbol(),
+      tokenContract.tokensPerMint(),
+      tokenContract.totalSupply(),
+    ]);
+
+    // 预售状态
+    const presaleEl = document.getElementById('status-presale');
+    if(presaleActive){
+      presaleEl.textContent='铸造中 🟢';
+      presaleEl.className='status-value success';
+    }else{
+      presaleEl.textContent='已终止 🔴';
+      presaleEl.className='status-value danger';
+    }
+
+    // Mint 状态
+    const mintedEl = document.getElementById('status-minted');
+    const hasMinted = mintedAmt.gt(0);
+    if(hasMinted){
+      mintedEl.textContent='已铸造 🟡';
+      mintedEl.className='status-value danger';
+    }else{
+      mintedEl.textContent='未铸造 🟢';
+      mintedEl.className='status-value success';
+    }
+
+    // 进度
+    const pct = fillAmt.gt(0) ? collected.mul(10000).div(fillAmt).toNumber()/100 : 0;
+    document.getElementById('progress-pct').textContent = pct.toFixed(1)+'%';
+    document.getElementById('progress-fill').style.width = Math.min(pct,100)+'%';
+
+    // 信息
+    document.getElementById('info-name').textContent = name_;
+    document.getElementById('info-symbol').textContent = symbol_;
+    document.getElementById('info-cost').textContent = ethers.utils.formatEther(mintCost)+' BNB';
+    document.getElementById('info-tokens').textContent = ethers.utils.formatEther(tokensPerMint)+' '+symbol_;
+    document.getElementById('info-fill').textContent = ethers.utils.formatEther(fillAmt)+' BNB';
+    document.getElementById('info-collected').textContent = ethers.utils.formatEther(collected)+' BNB';
+
+    // 控制 UI
+    const alreadyMinted = document.getElementById('already-minted');
+    const presaleEnded = document.getElementById('presale-ended');
+    const mintBtn = document.getElementById('btn-mint');
+    const mintBtnWrap = document.getElementById('mint-btn-wrap');
+    const mintHint = document.getElementById('mint-hint');
+    const limitNotice = document.querySelector('.limit-notice');
+
+    alreadyMinted.classList.remove('show');
+    presaleEnded.classList.remove('show');
+    mintBtnWrap.style.display='block';
+    limitNotice.style.display='flex';
+
+    if(!presaleActive){
+      presaleEnded.classList.add('show');
+      mintBtnWrap.style.display='none';
+      limitNotice.style.display='none';
+    }else if(hasMinted){
+      alreadyMinted.classList.add('show');
+      document.getElementById('already-minted-detail').textContent =
+        '你已获得 '+ethers.utils.formatEther(mintedAmt)+' '+symbol_;
+      mintBtnWrap.style.display='none';
+      limitNotice.style.display='none';
+    }else{
+      mintBtn.disabled=false;
+      mintHint.textContent='点击上方按钮铸造仙品，每座洞府仅限一次';
+    }
+
+  }catch(e){
+    console.error('刷新状态失败:', e);
+    alert('读取法契状态失败: '+e.message);
+  }
+}
+
+// ===== 执行 Mint =====
+async function doMint(){
+  if(!tokenContract || !userAddress) return;
+
+  const mintBtn = document.getElementById('btn-mint');
+  mintBtn.disabled = true;
+  mintBtn.textContent = '⏳ 天道确认中...';
+
+  showModal('🐉', '等待仙窍确认', '请在 MetaMask 中确认天道法旨', true);
+
+  try{
+    const mintCost = await tokenContract.mintCostBNB();
+
+    const mintedAmt = await tokenContract.mintedAmount(userAddress);
+    if(mintedAmt.gt(0)){
+      closeModal();
+      alert('你已铸造过仙品，每座洞府限一次！');
+      await refreshStatus();
+      return;
+    }
+
+    const presaleActive = await tokenContract.presaleActive();
+    if(!presaleActive){
+      closeModal();
+      alert('铸造已终止！');
+      await refreshStatus();
+      return;
+    }
+
+    const tx = await tokenContract.mint({value:mintCost});
+    updateModal('🐉', '铸造法旨已颁下', '等待天机确认...', true);
+
+    const receipt = await tx.wait();
+    const bscUrl = 'https://bscscan.com/tx/'+receipt.transactionHash;
+
+    updateModal('✨', '仙品铸造成功！', '仙品已入府，可在仙窍中查看', false, bscUrl);
+
+    await refreshStatus();
+  }catch(e){
+    console.error('铸造失败:', e);
+    const msg = e.reason || e.message || '未知天机';
+    updateModal('❌', '铸造失败', msg.length>120?msg.slice(0,120)+'...':msg, false);
+    mintBtn.disabled = false;
+    mintBtn.textContent = '🐉 铸造仙品';
+  }
+}
+
+// ===== 弹窗 =====
+function showModal(icon, title, desc, loading){
+  document.getElementById('modal-icon').textContent = icon;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-desc').textContent = desc;
+  document.getElementById('modal-status').style.display = loading?'flex':'none';
+  document.getElementById('modal-actions').style.display = loading?'none':'flex';
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function updateModal(icon, title, desc, loading, bscUrl){
+  document.getElementById('modal-icon').textContent = icon;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-desc').textContent = desc;
+  document.getElementById('modal-status').style.display = loading?'flex':'none';
+  document.getElementById('modal-actions').style.display = loading?'none':'flex';
+  if(bscUrl){
+    const a = document.getElementById('modal-bscscan');
+    a.href = bscUrl;
+    a.style.display = 'inline-flex';
+  }
+}
+
+function closeModal(){
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
+// URL 参数自动加载
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const addr = params.get('contract');
+  if(addr && ethers && ethers.utils && ethers.utils.isAddress(addr)){
+    document.getElementById('contract-address').value = addr;
+    window.addEventListener('load', function(){
+      if(window.ethereum) loadContract();
+    });
+  }
+})();
+</script>
+</body>
+</html>
